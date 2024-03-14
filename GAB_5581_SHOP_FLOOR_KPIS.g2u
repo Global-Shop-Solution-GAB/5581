@@ -1,0 +1,120 @@
+﻿Program.Sub.ScreenSU.Start
+Gui.frmShopKPIs..Create
+Gui.frmShopKPIs..Size(2820,1305)
+Gui.frmShopKPIs..MinX(0)
+Gui.frmShopKPIs..MinY(0)
+Gui.frmShopKPIs..Position(0,0)
+Gui.frmShopKPIs..BackColor(-2147483645)
+Gui.frmShopKPIs..MousePointer(0)
+Gui.frmShopKPIs..Caption("Shop KPIs")
+Gui.frmShopKPIs..Event(UnLoad,frmShopKPIs_UnLoad)
+Gui.frmShopKPIs.dtpDate.Create(DatePicker)
+Gui.frmShopKPIs.dtpDate.Size(1935,285)
+Gui.frmShopKPIs.dtpDate.Position(105,150)
+Gui.frmShopKPIs.dtpDate.Event(Change,dtpDate_Change)
+Gui.frmShopKPIs.lblWCUtil4.Create(Label,"",True,1530,645,0,13380,5265,True,2,"Arial",24,-2147483633,0)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+V.Global.bRefresh.Declare
+v.global.bSecs.Declare
+v.Global.iCnt.Declare
+v.Global.iSecs.Declare
+v.Global.sWC.Declare
+v.Global.sWCUtil.Declare
+v.Global.sSeriesBase.Declare
+v.global.sSeriesStack.Declare
+v.Global.sHTML.Declare
+v.Global.sHTMLInetPubFile.Declare
+v.Global.sHTMLInetPubFile.Set("C:\Inetpub\wwwroot\GAB_5581_SHOP_KPI.html")
+Program.External.Include.Library("GAB_5581_LIBRARY.lib")
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+f.ODBC.Connection!con.opencompanyconnection
+'Get WC list
+'v.Local.dDate.Declare
+'v.Local.dDate.Set("2019-06-07")
+'GUI.frmShopKPIs.dtpDate.Value(v.Local.dDate)
+f.Intrinsic.Control.CallSub(mainroutines)
+f.Intrinsic.Control.CallSub(frmShopKPIs_Unload)
+'GUI.frmShopKPIs.gscCharts.anchor(15)
+'gui.frmShopKPIs..Show
+Program.Sub.Main.End
+
+Program.Sub.mainroutines.Start
+f.Intrinsic.Control.CallSub(getHTML)
+f.Intrinsic.Control.CallSub(getWCList)
+f.Intrinsic.Control.CallSub(Quality)
+F.Intrinsic.Control.CallSub(DailyMachineHours)
+f.Intrinsic.Control.CallSub(OntimeDelivery)
+f.Intrinsic.Control.CallSub(TotalHoursOnOrder)
+'f.Intrinsic.Control.CallSub(TimeWriteOff)
+
+f.Intrinsic.File.String2File(v.Global.sHTMLInetPubFile,v.Global.sHTML)
+Program.Sub.mainroutines.End
+
+Program.Sub.getHTML.Start
+v.Local.sHTMLFile.Declare
+f.Intrinsic.String.Concat(v.Caller.GasDir,"\GAB_5581_SHOP_KPI_COPY.html",v.Local.sHTMLFile)
+f.Intrinsic.File.File2String(v.Local.sHTMLFile,v.Global.sHTML)
+Program.Sub.getHTML.End
+
+Program.Sub.getWCList.Start
+'Grab workcentre list
+f.Intrinsic.Control.Try
+	v.Local.dDate.Declare
+	v.Local.sFileLocat.Declare
+	v.Local.sret.Declare
+	v.Local.bFileCheck.Declare
+	v.Local.i.Declare
+	v.Local.iLen.Declare
+	'Load from XML File 
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",V.Caller.CompanyCode,"_GAB_5581_CONFIG.xml",v.Local.sFileLocat)
+	f.Intrinsic.File.Exists(v.Local.sFileLocat,v.Local.bFileCheck)
+	f.Intrinsic.Control.If(v.Local.bFileCheck)
+		f.Intrinsic.Control.If(v.DataTable.dt.Exists)
+			f.Data.DataTable.Close("dt")
+		f.Intrinsic.Control.EndIf
+		f.Data.DataTable.CreateFromXML("dt",v.Local.sFileLocat,true)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Control.ExitSub
+	f.Intrinsic.Control.EndIf
+	
+	'Get Workcentres from config
+	f.Intrinsic.Control.For(v.Local.i,0,v.DataTable.dt.RowCount--,1)
+		f.Intrinsic.Control.If(v.DataTable.dt(v.Local.i).Dailymach!fieldval)
+			f.Intrinsic.String.Split(v.DataTable.dt(v.Local.i).Workcentre!fieldvaltrim,"-",v.Local.sret)
+			f.Intrinsic.String.Concat(v.global.sWC,"'",v.Local.sRet(0).TRIM,"',",v.global.sWC)
+		f.Intrinsic.Control.EndIf
+		f.Intrinsic.Control.If(v.DataTable.dt(v.Local.i).WCUtil!fieldval)
+			f.Intrinsic.String.Split(v.DataTable.dt(v.Local.i).Workcentre!fieldvaltrim,"-",v.Local.sret)
+			f.Intrinsic.String.Concat(v.global.sWCUtil,"'",v.Local.sRet(0).TRIM,"',",v.global.sWCUtil)
+		f.Intrinsic.Control.EndIf
+	f.Intrinsic.Control.Next(v.Local.i)
+	v.Local.iLen.Set(v.global.sWC.Length)
+	f.Intrinsic.Math.Sub(v.Local.iLen,1,v.Local.iLen)
+	F.Intrinsic.String.Left(v.global.sWC,V.Local.iLen,v.global.sWC)
+	v.Local.iLen.Set(v.global.sWCUtil.Length)
+	f.Intrinsic.Math.Sub(v.Local.iLen,1,v.Local.iLen)
+	F.Intrinsic.String.Left(v.global.sWCUtil,V.Local.iLen,v.global.sWCUtil)
+	
+f.Intrinsic.Control.Catch
+	f.Intrinsic.UI.Msgbox(v.Ambient.ErrorDescription)
+	f.Intrinsic.Control.CallSub(frmShopKPIs_UnLoad)
+f.Intrinsic.Control.EndTry
+Program.Sub.getWCList.End
+
+Program.Sub.dtpDate_Change.Start
+f.Intrinsic.Control.CallSub(mainroutines)
+Program.Sub.dtpDate_Change.End
+
+Program.Sub.frmShopKPIs_UnLoad.Start
+f.ODBC.Connection!con.Close
+f.Intrinsic.Control.End
+Program.Sub.frmShopKPIs_UnLoad.End
+
+Program.Sub.Comments.Start
+${$5$}$2.0.0.0$}$2
+${$6$}$globalshop$}$20201221085109692$}$N6KCk/5vhz5oyVlDG2B4g8eDioysVRnIfCc0oO/RIbqeQrZAfWhrnC0XDi4BGF6vkk7Qu5VGn0jLJHrOPolUPw==
+Program.Sub.Comments.End
