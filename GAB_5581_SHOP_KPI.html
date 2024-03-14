@@ -1,0 +1,38 @@
+<html>
+<head>
+<script type="text/javascript" src="jquery.min.js"></script>
+    <script>
+		setTimeout(function (){
+			location.reload(1);		
+		}, 120000);
+    </script>
+</head>
+<body>
+<table width="100%" height="100%">
+	<tr>
+		<td bgcolor="%MACHINECOLOUR%" width="50%" align="center">
+			<p><font face="Arial" size="4"><u><b>MACHINE HOURS TODAY</b></u></font></p>
+			<p><font face="Arial" size="12"><b>%MACHINEACTUAL%</b></font></p>
+			<p><font face="Arial" size="5"><b> / %MACHINETARGET%</b></font></p>
+		</td>
+		<td bgcolor="%ONTIMECOLOUR%" width="50%" align="center">
+			<p><font face="Arial" size="4"><u><b>ON TIME DELIVERY - MTD</b></u></font></p>
+			<p><font face="Arial" size="12"><b>%ONTIMEACTUAL%%</b></font></p>
+			<p><font face="Arial" size="5"><b> / %ONTIMETARGET%%</b></font></p>
+		</td>
+	</tr>
+	<tr>
+		<td bgcolor="%HOURSCOLOUR%"  width="50%" align="center">
+			<p><font face="Arial" size="4"><u><b>HOURS ON ORDER</b></u></font></p>
+			<p><font face="Arial" size="12"><b>%HOURSACTUAL%</b></font></p>
+			<p><font face="Arial" size="5"><b> / %HOURSTARGET%</b></font></p>
+		</td>
+		<td bgcolor="%TIMECOLOUR%"  width="50%" align="center">
+			<p><font face="Arial" size="4"><u><b>TIME WRITTEN OFF - MTD</b></u></font></p>
+			<p><font face="Arial" size="12"><b>%TIMEACTUAL%%</b></font></p>
+			<p><font face="Arial" size="5"><b> / %TIMETARGET%%</b></font></p>
+		</td>
+	</tr>
+</table>
+</body>
+</html>
