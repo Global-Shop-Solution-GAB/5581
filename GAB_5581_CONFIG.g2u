@@ -1,0 +1,225 @@
+﻿Program.Sub.ScreenSU.Start
+Gui.frmConfig..Create(BaseForm)
+Gui.frmConfig..Size(5430,10560)
+Gui.frmConfig..MinX(0)
+Gui.frmConfig..MinY(0)
+Gui.frmConfig..Position(0,0)
+Gui.frmConfig..BackColor(-2147483633)
+Gui.frmConfig..MousePointer(0)
+Gui.frmConfig..Caption("Shop KPI Configuration")
+Gui.frmConfig..Event(UnLoad,frmConfig_UnLoad)
+Gui.frmConfig..AlwaysOnTop(False)
+Gui.frmConfig..FontName("Tahoma")
+Gui.frmConfig..FontSize(8.25)
+Gui.frmConfig..ControlBox(True)
+Gui.frmConfig..MaxButton(True)
+Gui.frmConfig..MinButton(True)
+Gui.frmConfig..Moveable(True)
+Gui.frmConfig..Sizeable(True)
+Gui.frmConfig..ShowInTaskBar(True)
+Gui.frmConfig..TitleBar(True)
+Gui.frmConfig.gsGCWorkCent.Create(GsGridControl)
+Gui.frmConfig.gsGCWorkCent.Size(4905,6405)
+Gui.frmConfig.gsGCWorkCent.Position(105,3030)
+Gui.frmConfig.gsGCWorkCent.Enabled(True)
+Gui.frmConfig.gsGCWorkCent.Visible(True)
+Gui.frmConfig.gsGCWorkCent.Zorder(0)
+Gui.frmConfig.lbl1.Create(Label,"Daily Machine Hours",True,1710,255,0,60,600,True,0,"Arial",8,-2147483633,0,0)
+Gui.frmConfig.lbl1.BorderStyle(0)
+Gui.frmConfig.cmdSave.Create(Button)
+Gui.frmConfig.cmdSave.Size(1305,375)
+Gui.frmConfig.cmdSave.Position(75,9555)
+Gui.frmConfig.cmdSave.Caption("Save")
+Gui.frmConfig.cmdSave.Event(Click,cmdSave_Click)
+Gui.frmConfig.cmdSave.Enabled(True)
+Gui.frmConfig.cmdSave.Visible(True)
+Gui.frmConfig.cmdSave.Zorder(0)
+Gui.frmConfig.cmdSave.FontName("Tahoma")
+Gui.frmConfig.cmdSave.FontSize(8.25)
+Gui.frmConfig.txtDailyMach.Create(TextBox,"",True,1215,300,0,2310,525,True,0,"Arial",8,-2147483643,1)
+Gui.frmConfig.txtDailyMach.NumericOnly(1)
+Gui.frmConfig.lbl2.Create(Label,"KPI Target",True,1245,255,0,2115,225,True,2,"Arial",8,-2147483633,0,0)
+Gui.frmConfig.lbl2.BorderStyle(0)
+Gui.frmConfig.lbl3.Create(Label,"Total Hours on Order",True,1695,255,0,75,930,True,0,"Arial",8,-2147483633,0,0)
+Gui.frmConfig.lbl3.BorderStyle(0)
+Gui.frmConfig.txtEstHours.Create(TextBox,"",True,1215,300,0,2310,855,True,0,"Arial",8,-2147483643,1)
+Gui.frmConfig.txtEstHours.NumericOnly(1)
+Gui.frmConfig.lbl5.Create(Label,"Actual vs Estimated - MTD %",True,2220,255,0,60,1290,True,0,"Arial",8,-2147483633,0,0)
+Gui.frmConfig.lbl5.BorderStyle(0)
+Gui.frmConfig.txtActEst.Create(TextBox,"",True,1215,300,0,2310,1185,True,0,"Arial",8,-2147483643,1)
+Gui.frmConfig.txtActEst.NumericOnly(1)
+Gui.frmConfig.lbl7.Create(Label,"Machine Utilisation -MTD %",True,2085,255,0,75,1620,True,0,"Arial",8,-2147483633,0,0)
+Gui.frmConfig.lbl7.BorderStyle(0)
+Gui.frmConfig.txtMachUtil.Create(TextBox,"",True,1215,300,0,2310,1545,True,0,"Arial",8,-2147483643,1)
+Gui.frmConfig.txtMachUtil.NumericOnly(1)
+Gui.frmConfig.lbl9.Create(Label,"Ontime Delivery MTD %",True,1680,210,0,75,1950,True,0,"Arial",8,-2147483633,0,0)
+Gui.frmConfig.lbl9.BorderStyle(0)
+Gui.frmConfig.txtOntime.Create(TextBox,"",True,1215,300,0,2310,1875,True,0,"Arial",8,-2147483643,1)
+Gui.frmConfig.txtOntime.NumericOnly(1)
+Gui.frmConfig.lbl10.Create(Label,"Workcentre List",True,1140,210,0,90,2775,True,0,"Arial",8,-2147483633,0,0)
+Gui.frmConfig.lbl10.BorderStyle(0)
+Gui.frmConfig.lblQuality.Create(Label,"Quality in $",True,795,210,0,75,2250,True,0,"Arial",8,-2147483633,0,0)
+Gui.frmConfig.lblQuality.BorderStyle(0)
+Gui.frmConfig.txtQuality.Create(TextBox,"",True,1215,300,0,2325,2205,True,0,"Arial",8,-2147483643,1)
+Gui.frmConfig.txtQuality.NumericOnly(1)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+f.Intrinsic.Control.Try
+	f.ODBC.Connection!con.opencompanyconnection
+	v.Local.ssql.Declare
+	v.Local.sWC.Declare
+	v.Local.sVal.Declare
+	v.Local.i.Declare(long)
+	v.Local.ssql.Set("SELECT CONCAT(MACHINE,CONCAT(' - ',WC_NAME)) AS 'WC' FROM V_WORKCENTERS")
+	f.Data.DataTable.CreateFromSQL("dtWC","con",v.Local.ssql)
+	f.ODBC.Connection!con.Close
+	F.Intrinsic.Control.For(v.Local.i,0,v.DataTable.dtWC.RowCount--,1)
+		f.Intrinsic.String.Concat(v.Local.sWC,v.DataTable.dtWC(v.Local.i).WC!fieldvaltrim,"*!*",v.Local.sWC)
+	F.Intrinsic.Control.Next(v.Local.i)
+	
+	'Check if the file exists
+	v.Local.bFileCheck.Declare(boolean)
+	v.Local.sFileLocat.Declare(string)
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",V.Caller.CompanyCode,"_GAB_5581_CONFIG.xml",v.Local.sFileLocat)
+	f.Intrinsic.File.Exists(v.Local.sFileLocat,v.Local.bFileCheck)
+	f.Intrinsic.Control.If(v.Local.bFileCheck)
+		f.Data.DataTable.CreateFromXML("dt",v.Local.sFileLocat,true)
+	f.Intrinsic.Control.Else
+		f.Data.DataTable.Create("dt",true)
+		f.Data.DataTable.AddColumn("dt","Workcentre","String")
+		f.Data.DataTable.AddColumn("dt","DailyMach","Boolean")
+		f.Data.DataTable.AddColumn("dt","WCUtil","Boolean")
+	f.Intrinsic.Control.EndIf
+	
+	'Check if Daily Machine Hours exists
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",V.Caller.CompanyCode,"_GAB_5581_DAILY_MACH_KPI.txt",v.Local.sFileLocat)
+	f.Intrinsic.File.Exists(v.Local.sFileLocat,v.Local.bFileCheck)
+	f.Intrinsic.Control.If(v.Local.bFileCheck)
+		f.Intrinsic.File.File2String(v.Local.sFileLocat,v.Local.sVal)
+		gui.frmConfig.txtDailyMach.Text(v.Local.sVal)
+	f.Intrinsic.Control.Else
+		gui.frmConfig.txtDailyMach.Text("")
+	f.Intrinsic.Control.EndIf
+		
+	'Check if Estimated  Hours exists
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",V.Caller.CompanyCode,"_GAB_5581_EST_HOURS_KPI.txt",v.Local.sFileLocat)
+	f.Intrinsic.File.Exists(v.Local.sFileLocat,v.Local.bFileCheck)
+	f.Intrinsic.Control.If(v.Local.bFileCheck)
+		f.Intrinsic.File.File2String(v.Local.sFileLocat,v.Local.sVal)
+		gui.frmConfig.txtEstHours.Text(v.Local.sVal)
+	f.Intrinsic.Control.Else
+		gui.frmConfig.txtEstHours.Text("")
+	f.Intrinsic.Control.EndIf
+			
+	'Check if Actual vs Estimated MTD Hours exists
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",V.Caller.CompanyCode,"_GAB_5581_EST_ACT_HOURS_KPI.txt",v.Local.sFileLocat)
+	f.Intrinsic.File.Exists(v.Local.sFileLocat,v.Local.bFileCheck)
+	f.Intrinsic.Control.If(v.Local.bFileCheck)
+		f.Intrinsic.File.File2String(v.Local.sFileLocat,v.Local.sVal)
+		gui.frmConfig.txtActEst.Text(v.Local.sVal)
+	f.Intrinsic.Control.Else
+		gui.frmConfig.txtActEst.Text("")
+	f.Intrinsic.Control.EndIf
+				
+	'Check if Mach Util MTD Hours exists
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",V.Caller.CompanyCode,"_GAB_5581_MACH_UTIL_KPI.txt",v.Local.sFileLocat)
+	f.Intrinsic.File.Exists(v.Local.sFileLocat,v.Local.bFileCheck)
+	f.Intrinsic.Control.If(v.Local.bFileCheck)
+		f.Intrinsic.File.File2String(v.Local.sFileLocat,v.Local.sVal)
+		gui.frmConfig.txtMachUtil.Text(v.Local.sVal)
+	f.Intrinsic.Control.Else
+		gui.frmConfig.txtMachUtil.Text("")
+	f.Intrinsic.Control.EndIf
+					
+	'Check if Ontime Delivery KPI exists
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",V.Caller.CompanyCode,"_GAB_5581_ONTIME.txt",v.Local.sFileLocat)
+	f.Intrinsic.File.Exists(v.Local.sFileLocat,v.Local.bFileCheck)
+	f.Intrinsic.Control.If(v.Local.bFileCheck)
+		f.Intrinsic.File.File2String(v.Local.sFileLocat,v.Local.sVal)
+		gui.frmConfig.txtOntime.Text(v.Local.sVal)
+	f.Intrinsic.Control.Else
+		gui.frmConfig.txtOntime.Text("")
+	f.Intrinsic.Control.EndIf
+	
+	'Check if Ontime Delivery KPI exists
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",V.Caller.CompanyCode,"_GAB_5581_QUALITY.txt",v.Local.sFileLocat)
+	f.Intrinsic.File.Exists(v.Local.sFileLocat,v.Local.bFileCheck)
+	f.Intrinsic.Control.If(v.Local.bFileCheck)
+		f.Intrinsic.File.File2String(v.Local.sFileLocat,v.Local.sVal)
+		gui.frmConfig.txtQuality.Text(v.Local.sVal)
+	f.Intrinsic.Control.Else
+		gui.frmConfig.txtQuality.Text("")
+	f.Intrinsic.Control.EndIf
+	
+	'Set Column Properties
+	gui.frmConfig.gsgcWorkCent.DataSource("dt")
+	gui.frmConfig.gsgcWorkCent.AddGridviewFromDatatable("gv","dt")
+	gui.frmConfig.gsgcWorkCent.SetGridviewProperty("gv","AllowAddRows","True")
+	gui.frmConfig.gsgcWorkCent.SetGridviewProperty("gv","AllowDeleteRows","True")
+	gui.frmConfig.gsgcWorkCent.SetColumnProperty("gv","Workcentre","ReadOnly","False")
+	gui.frmConfig.gsgcWorkCent.SetColumnProperty("gv","Workcentre","AllowEdit","True")
+	gui.frmConfig.gsgcWorkCent.SetColumnProperty("gv","DailyMach","ReadOnly","False")
+	gui.frmConfig.gsgcWorkCent.SetColumnProperty("gv","DailyMach","AllowEdit","True")
+	gui.frmConfig.gsgcWorkCent.SetColumnProperty("gv","WCUtil","ReadOnly","False")
+	gui.frmConfig.gsgcWorkCent.SetColumnProperty("gv","WCUtil","AllowEdit","True")
+	'Set Bold
+	gui.frmConfig.gsgcWorkCent.SetColumnProperty("gv","Workcentre","HeaderFontBold","True")
+	gui.frmConfig.gsgcWorkCent.SetColumnProperty("gv","DailyMach","HeaderFontBold","True")
+	gui.frmConfig.gsgcWorkCent.SetColumnProperty("gv","WCUtil","HeaderFontBold","True")
+	'Set drop down list
+	gui.frmConfig.gsgcWorkCent.ColumnEdit("gv","Workcentre","Dropdownlist",v.Local.sWC)
+	
+	'0 - None
+	'1 - Top
+	'2 - Bottom
+	'4 - Left
+	'8 - Right
+	gui.frmConfig.gsgcWorkCent.anchor(15)
+	gui.frmConfig.cmdSave.ANCHOR(6)
+	
+	'Show form
+	gui.frmConfig..Show
+	
+f.Intrinsic.Control.Catch
+	f.Intrinsic.UI.Msgbox(v.Ambient.ErrorDescription)
+	f.Intrinsic.Control.CallSub(frmConfig_UnLoad)
+f.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.cmdSave_Click.Start
+f.Intrinsic.Control.Try
+	v.Local.sFileLocat.Declare(string)
+	'Daily Machine Hours
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",V.Caller.CompanyCode,"_GAB_5581_CONFIG.xml",v.Local.sFileLocat)
+	f.Data.DataTable.SaveToXML("dt",0,true,v.Local.sfileLocat)
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",v.Caller.CompanyCode,"_GAB_5581_DAILY_MACH_KPI.txt",v.Local.sFileLocat)
+	f.Intrinsic.File.String2File(v.Local.sFileLocat,v.Screen.frmConfig!txtDailyMach.text)
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",v.Caller.CompanyCode,"_GAB_5581_EST_HOURS_KPI.txt",v.Local.sFileLocat)
+	f.Intrinsic.File.String2File(v.Local.sFileLocat,v.Screen.frmConfig!txtEstHours.text)
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",v.Caller.CompanyCode,"_GAB_5581_EST_ACT_HOURS_KPI.txt",v.Local.sFileLocat)
+	f.Intrinsic.File.String2File(v.Local.sFileLocat,v.Screen.frmConfig!txtActEst.text)
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",v.Caller.CompanyCode,"_GAB_5581_MACH_UTIL_KPI.txt",v.Local.sFileLocat)
+	f.Intrinsic.File.String2File(v.Local.sFileLocat,v.Screen.frmConfig!txtMachUtil.text)
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",v.Caller.CompanyCode,"_GAB_5581_ONTIME.txt",v.Local.sFileLocat)
+	f.Intrinsic.File.String2File(v.Local.sFileLocat,v.Screen.frmConfig!txtOntime.text)
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",v.Caller.CompanyCode,"_GAB_5581_QUALITY.txt",v.Local.sFileLocat)
+	f.Intrinsic.File.String2File(v.Local.sFileLocat,v.Screen.frmConfig!txtQuality.text)
+	f.Intrinsic.UI.Msgbox("Successfully Updated.")
+f.Intrinsic.Control.Catch
+	f.Intrinsic.UI.Msgbox(v.Ambient.ErrorDescription)
+	f.Intrinsic.Control.CallSub(frmConfig_UnLoad)
+f.Intrinsic.Control.EndTry
+Program.Sub.cmdSave_Click.End
+
+Program.Sub.frmConfig_UnLoad.Start
+F.Intrinsic.Control.End
+Program.Sub.frmConfig_UnLoad.End
+
+Program.Sub.Comments.Start
+${$5$}$2.0.0.0$}$2
+${$6$}$globalshop$}$20201214184135284$}$N6KCk/5vhz5oyVlDG2B4g8eDioysVRnIfCc0oO/RIbpHq2tJDSGtoaBwod233ZRUPezYglhkmb2TdVBliCy4hA==
+Program.Sub.Comments.End
