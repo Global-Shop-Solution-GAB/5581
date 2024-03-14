@@ -1,0 +1,441 @@
+Program.Sub.Preflight.Start
+F.Data.DataTable.Create("dtKPI",true)
+f.Data.DataTable.AddColumn("dtKPI","DateRan","string")
+f.Data.DataTable.AddColumn("dtKPI","KPIName","string")
+f.Data.DataTable.AddColumn("dtKPI","Actual","string")
+f.Data.DataTable.AddColumn("dtKPI","Target","string")
+Program.Sub.Preflight.End
+
+Program.Sub.Quality.Start
+f.Intrinsic.Control.Try
+	V.Local.sSeriesBase.Declare
+	V.Local.sSeriesStacked.Declare
+	v.Local.bFileCheck.Declare
+	v.Local.sFileLocat.Declare
+	v.Local.sSql.Declare
+	v.Local.sOutput.Declare
+	v.Local.sStartTime.Declare
+	v.Local.fRet.Declare
+	v.Local.fKPITarget.Declare
+	v.Local.sWC.Declare
+	v.Local.sResult.Declare
+	v.Local.fResult.Declare
+	v.Local.sDebugFile1.Declare
+	v.Local.sDebugFile2.Declare
+	v.Local.sDebugFile3.Declare
+	v.Local.sDebugFile4.Declare
+	v.Local.sTimeStamp.Declare
+	v.Local.fTimeNow.Declare
+	v.Local.fTimeStart.Declare
+	v.Local.fTimeResult.Declare
+	v.Local.fTotWIPTime.Declare
+	v.Local.fTmp.Declare
+	v.Local.dDate.Declare
+	V.Local.DEndDate.Declare
+	v.local.dNowTime.declare
+	v.Local.dStartTime.Declare
+	v.Local.dEndTime.Declare
+	v.Local.i.Declare
+	v.Local.iLen.Declare
+	v.Local.fVal.Declare
+	v.Local.iJobCount.Declare
+	v.Local.dDate.Set(v.Screen.frmShopKPIs!dtpDate.Value)
+	
+	f.Intrinsic.Date.BeginningOfMonth(v.Local.dDate,v.Local.dDate)
+	f.Intrinsic.Date.EndOfMonth(v.Local.dDate,v.Local.dEndDate)
+	v.Local.fResult.Set(0)
+	
+	'Get KPI target from config
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",V.Caller.CompanyCode,"_GAB_5581_QUALITY.txt",v.Local.sFileLocat)
+	f.Intrinsic.File.Exists(v.Local.sFileLocat,v.Local.bFileCheck)
+	f.Intrinsic.Control.If(v.Local.bFileCheck)
+		f.Intrinsic.File.File2String(v.Local.sFileLocat,v.Local.fKPITarget)	
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Control.ExitSub
+	f.Intrinsic.Control.EndIf
+	f.Intrinsic.String.Replace(v.Global.sHTML,"%TIMETARGET%",v.Local.fKPITarget,v.Global.sHTML)
+	
+	'Get Amount
+	f.Intrinsic.String.Build("select SUM(ORIG_SCRAP_VALUE) from V_QUALITY WHERE DATE_QUALITY BETWEEN '{0}' AND '{1}' and WORKCENTER in ({2})",v.Local.dDate.PervasiveDate,v.Local.DEndDate.PervasiveDate,v.global.sWC,v.Local.ssql)
+	f.ODBC.Connection!con.executeandreturn(v.Local.sSql,v.Local.fRet)
+	'Send to debug file
+	f.Intrinsic.String.Format(v.Ambient.Now,"MMDD HHNN",V.Local.sTimeStamp)
+	f.Intrinsic.String.Concat(v.Caller.FilesDir,"\DebugQuality",v.Local.sTimeStamp,".txt",v.Local.sDebugFile1)
+	f.Intrinsic.File.String2File(v.Local.sDebugFile1,v.Local.fRet)
+	
+	'Add row
+	f.Data.DataTable.AddRow("dtKPI","DateRan",v.Ambient.Date,"KPIName","QualityMTD","Actual",v.Local.fRet,"Target",v.Local.fKPITarget)
+	f.Intrinsic.String.Replace(v.Global.sHTML,"%TIMEACTUAL%",v.Local.FRET,v.Global.sHTML)
+	
+	'Calculate
+	f.Intrinsic.Control.If(v.Local.fRet,<>,0)
+	f.Intrinsic.Control.AndIf(v.Local.fKPITarget,<>,0)
+		f.Intrinsic.Math.Div(v.Local.fRet,v.Local.fKPITarget,v.Local.fResult)
+		f.Intrinsic.Math.Mult(v.Local.fResult,100,v.Local.fResult)
+		f.Intrinsic.Math.Round(v.Local.fResult,0,v.Local.fResult)
+	f.Intrinsic.Control.EndIf
+	
+	
+	'Determine colour
+	f.Intrinsic.Control.If(v.Local.fResult,>=,-100,"AND",v.Local.fResult,<=,90)
+		f.Intrinsic.String.Replace(v.Global.sHTML,"%TIMECOLOUR%","#00AF50",v.Global.sHTML)
+	f.Intrinsic.Control.ElseIf(v.Local.fResult,>=,91,"AND",v.Local.fResult,<=,95)
+		f.Intrinsic.String.Replace(v.Global.sHTML,"%TIMECOLOUR%","#FF8000",v.Global.sHTML)
+	f.Intrinsic.Control.ElseIf(v.Local.fRet,=,0)
+		f.Intrinsic.String.Replace(v.Global.sHTML,"%TIMECOLOUR%","#FE0000",v.Global.sHTML)
+	f.Intrinsic.Control.Else
+		f.Intrinsic.String.Replace(v.Global.sHTML,"%TIMECOLOUR%","#FE0000",v.Global.sHTML)
+	f.Intrinsic.Control.EndIf
+	
+f.Intrinsic.Control.Catch
+	f.Intrinsic.UI.Msgbox(v.Ambient.ErrorDescription)
+	f.Intrinsic.Control.CallSub(frmShopKPIs_UnLoad)
+f.Intrinsic.Control.EndTry
+Program.Sub.Quality.End
+
+Program.Sub.DailyMachineHours.Start
+f.Intrinsic.Control.Try
+	V.Local.sSeriesBase.Declare
+	V.Local.sSeriesStacked.Declare
+	v.Local.bFileCheck.Declare
+	v.Local.sFileLocat.Declare
+	v.Local.sSql.Declare
+	v.Local.sOutput.Declare
+	v.Local.sStartTime.Declare
+	v.Local.fRet.Declare
+	v.Local.fKPITarget.Declare
+	v.Local.sWC.Declare
+	v.Local.sResult.Declare
+	v.Local.fResult.Declare
+	v.Local.sDebugFile1.Declare
+	v.Local.sDebugFile2.Declare
+	v.Local.sDebugFile3.Declare
+	v.Local.sDebugFile4.Declare
+	v.Local.sTimeStamp.Declare
+	v.Local.fTimeNow.Declare
+	v.Local.fTimeStart.Declare
+	v.Local.fTimeResult.Declare
+	v.Local.fTotWIPTime.Declare
+	v.Local.fTmp.Declare
+	v.Local.dDate.Declare
+	V.Local.dPrevDate.Declare
+	v.local.dNowTime.declare
+	v.Local.dStartTime.Declare
+	v.Local.dEndTime.Declare
+	v.Local.i.Declare
+	v.Local.iLen.Declare
+	v.Local.fVal.Declare
+	v.Local.iJobCount.Declare
+	v.Local.dDate.Set(v.Screen.frmShopKPIs!dtpDate.Value)
+	f.Intrinsic.Date.DateAdd("D",-1,V.Local.dDate,V.Local.dPrevDate)
+	v.Local.fResult.Set(0)
+	
+	'Get KPI target from config
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",V.Caller.CompanyCode,"_GAB_5581_DAILY_MACH_KPI.txt",v.Local.sFileLocat)
+	f.Intrinsic.File.Exists(v.Local.sFileLocat,v.Local.bFileCheck)
+	f.Intrinsic.Control.If(v.Local.bFileCheck)
+		f.Intrinsic.File.File2String(v.Local.sFileLocat,v.Local.fKPITarget)	
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Control.ExitSub
+	f.Intrinsic.Control.EndIf
+	f.Intrinsic.String.Replace(v.Global.sHTML,"%MACHINETARGET%",v.Local.fKPITarget,v.Global.sHTML)
+	
+	'Get hours worked today	
+	f.Intrinsic.String.Build("SELECT ifnull(SUM(HOURS_WORKED),0) FROM V_JOB_DETAIL WHERE CHARGE_DATE='{0}' and MACHINE in ({1})",v.Local.dPrevDate.PervasiveDate,v.global.sWC,v.Local.ssql)
+	f.ODBC.Connection!con.executeandreturn(v.Local.sSql,v.Local.fRet)
+	'Send to debug file
+	f.Intrinsic.String.Format(v.Ambient.Now,"MMDD HHNN",V.Local.sTimeStamp)
+	f.Intrinsic.String.Concat(v.Caller.FilesDir,"\DebugChargedHours",v.Local.sTimeStamp,".txt",v.Local.sDebugFile1)
+	f.Intrinsic.File.String2File(v.Local.sDebugFile1,v.Local.fRet)
+	
+	'Get hours in process
+'	f.Intrinsic.String.Build("SELECT JOB, SUFFIX, SEQ, START_TIME, EMP_INITIALS, EMPLOYEE, 1 AS 'Divisor' FROM v_JOBS_IN_PROCESS_G WHERE INDIRECT='D' AND Workcenter in ({0})",v.global.sWC,v.Local.ssql)
+'	f.Data.DataTable.CreateFromSQL("dtJW","con",v.Local.sSql,true)
+'	v.Local.dNowTime.Set(v.Ambient.time)
+'	f.Intrinsic.Control.For(v.Local.i,0,v.DataTable.dtJW.RowCount--,1)
+'		f.Intrinsic.String.Build("SELECT COUNT(JOB) AS 'JOBCOUNT' FROM V_JOBS_IN_PROCESS_G WHERE EMPLOYEE='{0}'",v.DataTable.dtJW(v.Local.i).EMPLOYEE!FIELDVALTRIM,v.Local.ssql)
+'		f.ODBC.Connection!con.executeandreturn(v.Local.sSql,v.Local.iJobCount)
+'		f.Data.DataTable.SetValue("dtJW",v.Local.i,"Divisor",v.Local.iJobCount)
+'		v.Local.dStartTime.Set(v.DataTable.dtJW(v.Local.i).START_TIME!fieldval)
+'		f.Intrinsic.Date.DateDiff("N",v.Local.dStartTime,v.Local.dNowTime,v.Local.fVal)
+'		f.Intrinsic.Control.If(v.Local.fVal,<>,0)
+'			f.Intrinsic.Math.Div(v.Local.fVal,60,v.Local.fVal)
+'		f.Intrinsic.Control.EndIf
+'		'f.Intrinsic.Math.Div(v.Local.fVal,v.Local.iJobCount,v.Local.fVal)
+'		F.Intrinsic.Math.Add(v.Local.fTotWIPTime,v.Local.fVal,v.Local.fTotWIPTime)
+'	f.Intrinsic.Control.Next(v.Local.i)
+''	f.Intrinsic.Control.If(v.DataTable.dtJW.RowCount,<>,0)
+''		F.Intrinsic.Math.Div(v.Local.fTotWIPTime,v.DataTable.dtJW.RowCount,v.Local.fTotWIPTime)
+''	f.Intrinsic.Control.EndIf
+'	f.Intrinsic.Math.Round(v.Local.fTotWIPTime,2,v.Local.fTotWIPTime)
+	f.Intrinsic.Math.Add(v.Local.fret,v.Local.fTotWIPTime,v.Local.fResult)
+	
+	'Send to debug file
+	f.Intrinsic.String.Concat(v.Caller.FilesDir,"\DebugResultTotal",v.Local.sTimeStamp,".txt",v.Local.sDebugFile4)
+	f.Intrinsic.File.String2File(v.Local.sDebugFile4,v.Local.fResult)
+	
+'	f.Intrinsic.String.Concat(v.Caller.FilesDir,"\DebugWIPTotal",v.Local.sTimeStamp,".txt",v.Local.sDebugFile3)
+'	f.Intrinsic.File.String2File(v.Local.sDebugFile3,v.Local.fTotWIPTime)
+'	
+'	f.Intrinsic.String.Concat(v.Caller.FilesDir,"\DebugWIPDetailHours",v.Local.sTimeStamp,".txt",v.Local.sDebugFile2)
+'	f.Data.DataTable.SaveToCSV("dtJW",v.Local.sDebugFile2,true)
+	
+	
+		'Add row
+	f.Data.DataTable.AddRow("dtKPI","DateRan",v.Ambient.Date,"KPIName","DailyMachineHours","Actual",v.Local.fResult,"Target",v.Local.fKPITarget)
+	f.Intrinsic.String.Replace(v.Global.sHTML,"%MACHINEACTUAL%",v.Local.fResult,v.Global.sHTML)
+	
+	'Calculate
+	f.Intrinsic.Control.If(v.Local.fRet,<>,0)
+	f.Intrinsic.Control.AndIf(v.Local.fKPITarget,<>,0)
+		f.Intrinsic.Math.Div(v.Local.fRet,v.Local.fKPITarget,v.Local.fResult)
+		f.Intrinsic.Math.Mult(v.Local.fResult,100,v.Local.fResult)
+		f.Intrinsic.Math.Round(v.Local.fResult,0,v.Local.fResult)
+		f.Intrinsic.Math.Sub(100,v.Local.fResult,v.Local.fResult)
+	f.Intrinsic.Control.EndIf
+	
+	
+	'Determine colour
+	f.Intrinsic.Control.If(v.Local.fResult,>=,-100,"AND",v.Local.fResult,<=,5.99)
+		f.Intrinsic.String.Replace(v.Global.sHTML,"%MACHINECOLOUR%","#00AF50",v.Global.sHTML)
+	f.Intrinsic.Control.ElseIf(v.Local.fResult,>=,6,"AND",v.Local.fResult,<=,9.99)
+		f.Intrinsic.String.Replace(v.Global.sHTML,"%MACHINECOLOUR%","#FF8000",v.Global.sHTML)
+	f.Intrinsic.Control.Else
+		f.Intrinsic.String.Replace(v.Global.sHTML,"%MACHINECOLOUR%","#FE0000",v.Global.sHTML)
+	'f.Intrinsic.Control.ElseIf(v.Local.fRet,=,0)
+	'	f.Intrinsic.String.Replace(v.Global.sHTML,"%MACHINECOLOUR%","#FE0000",v.Global.sHTML)
+	'f.Intrinsic.Control.Else
+	'	f.Intrinsic.String.Replace(v.Global.sHTML,"%MACHINECOLOUR%","#FFFFFF",v.Global.sHTML)
+	f.Intrinsic.Control.EndIf
+	
+f.Intrinsic.Control.Catch
+	f.Intrinsic.UI.Msgbox(v.Ambient.ErrorDescription)
+	f.Intrinsic.Control.CallSub(frmShopKPIs_UnLoad)
+f.Intrinsic.Control.EndTry
+Program.Sub.DailyMachineHours.End
+
+Program.Sub.OntimeDelivery.Start
+f.Intrinsic.Control.Try
+	'DSH100/N
+	v.Local.i.Declare
+	v.Local.sSql.Declare
+	v.Local.dDate.Declare
+	v.local.dBegDate.Declare
+	v.Local.dEndDate.Declare
+	v.Local.fTotOntime.Declare
+	v.Local.fTotOrders.Declare
+	v.Local.fResult.Declare
+	v.Local.sresult.Declare
+	v.Local.sFileLocat.Declare
+	v.Local.fKPITarget.Declare
+	v.Local.sKPITarget.Declare
+	v.Local.sOutput.Declare
+	v.Local.bFileCheck.Declare
+	'Get KPI target from config
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",V.Caller.CompanyCode,"_GAB_5581_ONTIME.txt",v.Local.sFileLocat)
+	f.Intrinsic.File.Exists(v.Local.sFileLocat,v.Local.bFileCheck)
+	f.Intrinsic.Control.If(v.Local.bFileCheck)
+		f.Intrinsic.File.File2String(v.Local.sFileLocat,v.Local.fKPITarget)	
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Control.ExitSub
+	f.Intrinsic.Control.EndIf
+	f.Intrinsic.String.Replace(v.Global.sHTML,"%ONTIMETARGET%",v.Local.fKPITarget,v.Global.sHTML)
+		
+	'Set Dates
+	v.Local.dDate.Set(v.Screen.frmShopKPIs!dtpDate.Value)
+	f.Intrinsic.Date.BeginningOfMonth(v.Local.dDate,v.Local.dBegDate)
+	f.Intrinsic.Date.EndOfMonth(v.Local.dDate,v.Local.dEndDate)
+		
+	F.Global.General.CallWrapperSync(50,"DSH100/N")
+	f.Intrinsic.String.Build("select order_no, order_line, ship_date, ontime as 'ontime', late as 'late', early as 'early' from v_BI_DASH2 where ship_date BETWEEN '{0}' AND '{1}'",v.Local.dBegDate.PervasiveDate,v.Local.dEndDate.PervasiveDate,v.Local.ssql)
+	'f.Intrinsic.String.Build("select order_no, order_line, ship_date, sum(ontime) as 'ontime', sum(late) as 'late', sum(early) as 'early' from v_BI_DASH2 where ship_date BETWEEN '{0}' AND '{1}' group by order_no, order_line, ship_date",v.Local.dBegDate.PervasiveDate,v.Local.dEndDate.PervasiveDate,v.Local.ssql)
+	f.Intrinsic.Control.If(v.DataTable.dtOT.Exists)
+		f.Data.DataTable.Close("dtOT")
+	f.Intrinsic.Control.EndIf
+	F.Data.DataTable.CreateFromSQL("dtOT","con",v.Local.ssql,true)
+	f.Data.DataTable.AddColumn("dtOT","OntimeCount","Integer")
+	f.Intrinsic.Control.For(v.Local.i,0,v.DataTable.dtOT.RowCount--,1)
+		f.Intrinsic.Control.If(v.DataTable.dtOT(v.Local.i).Late!fieldval,<=,0)
+			f.Data.DataTable.SetValue("dtOT",v.Local.i,"OntimeCount","1")
+		f.Intrinsic.Control.EndIf
+	f.Intrinsic.Control.Next(v.Local.i)
+	f.Data.DataTable.Compute("dtOT","Sum(OntimeCount)","",v.Local.fTotOntime)
+	v.Local.fTotOrders.Set(v.DataTable.dtOT.RowCount)
+	f.Intrinsic.Control.If(v.Local.fTotOntime,<>,0)
+	f.Intrinsic.Control.AndIf(v.Local.fTotOrders,<>,0)
+		f.Intrinsic.Math.Div(v.Local.fTotOntime,v.Local.fTotOrders,v.Local.fResult)
+		f.Intrinsic.Math.Mult(v.Local.fResult,100,v.Local.fresult)
+		f.Intrinsic.Math.Round(v.Local.fResult,0,v.Local.fResult)
+	f.Intrinsic.Control.EndIf
+	f.Intrinsic.String.Replace(v.Global.sHTML,"%ONTIMEACTUAL%",v.Local.fResult,v.Global.sHTML)
+	'Add row
+	'f.Data.DataTable.AddRow("dtKPI","DateRan",v.Ambient.Date,"KPIName","Ontime","Actual",v.Local.fResult,"Target",v.Local.fKPITarget)
+	
+	'Calculate
+	f.Intrinsic.Math.Sub(v.Local.fKPITarget,v.Local.fResult,v.Local.fResult)
+	
+
+	'Determine colour
+	f.Intrinsic.Control.If(v.Local.fResult,>=,-100,"AND",v.Local.fResult,<=,5.99)
+		f.Intrinsic.String.Replace(v.Global.sHTML,"%ONTIMECOLOUR%","#00AF50",v.Global.sHTML)
+	f.Intrinsic.Control.ElseIf(v.Local.fResult,>=,6,"AND",v.Local.fResult,<=,9.99)
+		f.Intrinsic.String.Replace(v.Global.sHTML,"%ONTIMECOLOUR%","#FF8000",v.Global.sHTML)
+	f.Intrinsic.Control.Else
+		f.Intrinsic.String.Replace(v.Global.sHTML,"%ONTIMECOLOUR%","#FE0000",v.Global.sHTML)
+	f.Intrinsic.Control.EndIf
+	
+f.Intrinsic.Control.Catch
+	f.Intrinsic.UI.Msgbox(v.Ambient.ErrorDescription)
+	f.Intrinsic.Control.CallSub(frmShopKPIs_UnLoad)
+f.Intrinsic.Control.EndTry
+Program.Sub.OntimeDelivery.End
+
+Program.Sub.TimeWriteOff.Start
+f.Intrinsic.Control.Try
+	v.Local.bFileCheck.Declare
+	v.Local.sFileLocat.Declare
+	v.Local.sSql.Declare
+	v.Local.sRet.Declare
+	v.Local.sOutput.Declare
+	v.Local.fKPITarget.Declare
+	v.Local.sWC.Declare
+	v.Local.fResult.Declare
+	v.Local.dDate.Declare
+	v.Local.dBegDate.Declare
+	v.Local.dEndDate.Declare
+	v.Local.i.Declare(long)
+	v.Local.iLen.Declare
+	v.Local.fEst.Declare
+	v.Local.fAct.Declare
+	v.Local.fTot.Declare
+	v.Local.fTmp.Declare
+	
+	'Get KPI target from config
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",V.Caller.CompanyCode,"_GAB_5581_EST_ACT_HOURS_KPI.txt",v.Local.sFileLocat)
+	f.Intrinsic.File.Exists(v.Local.sFileLocat,v.Local.bFileCheck)
+	f.Intrinsic.Control.If(v.Local.bFileCheck)
+		f.Intrinsic.File.File2String(v.Local.sFileLocat,v.Local.fKPITarget)	
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Control.ExitSub
+	f.Intrinsic.Control.EndIf
+	f.Intrinsic.String.Replace(v.Global.sHTML,"%TIMETARGET%",v.Local.fKPITarget,v.Global.sHTML)
+	
+	'Set Dates
+	v.Local.dDate.Set(v.Screen.frmShopKPIs!dtpDate.Value)
+	f.Intrinsic.Date.BeginningOfMonth(v.Local.dDate,v.Local.dBegDate)
+	f.Intrinsic.Date.EndOfMonth(v.Local.dDate,v.Local.dEndDate)
+	
+	'Get estimated hours	
+	F.Intrinsic.String.Build("select SUM(V_JOB_OPERATIONS.HOURS_ESTIMATED) from V_JOB_OPERATIONS LEFT JOIN V_JOB_HEADER ON V_JOB_OPERATIONS.JOB = V_JOB_HEADER.JOB AND V_JOB_OPERATIONS.SUFFIX = V_JOB_HEADER.SUFFIX WHERE V_JOB_OPERATIONS.LMO='L' AND V_JOB_OPERATIONS.JOB<>'ZIND' AND V_JOB_OPERATIONS.JOB<>'CASH' AND V_JOB_OPERATIONS.PART<>'RD' AND V_JOB_OPERATIONS.PART<>'BD' AND V_JOB_HEADER.CUSTOMER<>'111111' AND V_JOB_OPERATIONS.DATE_COMPLETED BETWEEN '{0}' AND '{1}'",v.Local.dBegDate.PervasiveDate,v.Local.dEndDate.PervasiveDate,v.Local.ssql)
+	'F.Intrinsic.String.Build("select SUM(HOURS_ESTIMATED) from V_JOB_OPERATIONS WHERE LMO='L' AND JOB<>'ZIND' AND JOB<>'CASH' AND PART<>'RD' AND PART<>'BD' AND DATE_COMPLETED BETWEEN '{0}' AND '{1}'",v.Local.dBegDate.PervasiveDate,v.Local.dEndDate.PervasiveDate,v.Local.ssql)
+	f.ODBC.Connection!con.executeandreturn(V.Local.sSql,v.Local.fEst)
+	f.Intrinsic.Math.Round(v.Local.fEst,0,v.Local.fEst)
+	
+	'Get actual hours
+	F.Intrinsic.String.Build("select SUM(V_JOB_OPERATIONS.HOURS_ACTUAL) from V_JOB_OPERATIONS LEFT JOIN V_JOB_HEADER ON V_JOB_OPERATIONS.JOB = V_JOB_HEADER.JOB AND V_JOB_OPERATIONS.SUFFIX = V_JOB_HEADER.SUFFIX WHERE V_JOB_OPERATIONS.LMO='L' AND V_JOB_OPERATIONS.JOB<>'ZIND' AND V_JOB_OPERATIONS.JOB<>'CASH' AND V_JOB_OPERATIONS.PART<>'RD' AND V_JOB_OPERATIONS.PART<>'BD' AND V_JOB_HEADER.CUSTOMER<>'111111' AND V_JOB_OPERATIONS.DATE_COMPLETED BETWEEN '{0}' AND '{1}'",v.Local.dBegDate.PervasiveDate,v.Local.dEndDate.PervasiveDate,v.Local.ssql)
+	'f.Intrinsic.String.Build("select SUM(HOURS_ACTUAL) from V_JOB_OPERATIONS WHERE LMO='L' AND JOB<>'ZIND' AND JOB<>'CASH' AND PART<>'RD' AND PART<>'BD' AND DATE_COMPLETED BETWEEN '{0}' AND '{1}'",v.Local.dBegDate.PervasiveDate,v.Local.dEndDate.PervasiveDate,v.Local.ssql)
+	f.ODBC.Connection!con.executeandreturn(v.Local.sSql,v.Local.fAct)
+	f.Intrinsic.Math.Round(v.Local.fAct,0,v.Local.fAct)
+	
+	'Calculate
+	f.Intrinsic.Math.Sub(v.Local.fAct,v.Local.fEst,v.Local.fTmp)
+	f.Intrinsic.Control.If(v.Local.fTmp,<>,0)
+	f.Intrinsic.Control.AndIf(v.Local.fEst,<>,0)
+		'f.Intrinsic.Math.Div(v.Local.ftmp,v.Local.fEst,v.Local.fTot)
+		f.Intrinsic.Math.Div(v.Local.ftmp,v.Local.fAct,v.Local.fTot)
+		f.Intrinsic.Math.Mult(v.Local.fTot,100,v.Local.fTot)
+		f.Intrinsic.Math.Round(v.Local.fTot,2,v.Local.fTot)
+	f.Intrinsic.Control.EndIf
+	v.Local.fResult.Set(v.Local.fTot)
+	f.Intrinsic.String.Replace(v.Global.sHTML,"%TIMEACTUAL%",v.Local.fResult,v.Global.sHTML)
+	
+	'Add row
+	'f.Data.DataTable.AddRow("dtKPI","DateRan",v.Ambient.Date,"KPIName","TimeWriteOff","Actual",v.Local.fResult,"Target",v.Local.fKPITarget)
+
+	'Determine colour
+	f.Intrinsic.Control.If(v.Local.fResult,>=,-100,"AND",v.Local.fResult,<=,10)
+		f.Intrinsic.String.Replace(v.Global.sHTML,"%TIMECOLOUR%","#00AF50",v.Global.sHTML)
+	f.Intrinsic.Control.ElseIf(v.Local.fResult,>=,10,"AND",v.Local.fResult,<=,15)
+		f.Intrinsic.String.Replace(v.Global.sHTML,"%TIMECOLOUR%","#FF8000",v.Global.sHTML)
+	f.Intrinsic.Control.Else
+		f.Intrinsic.String.Replace(v.Global.sHTML,"%TIMECOLOUR%","#FE0000",v.Global.sHTML)
+	f.Intrinsic.Control.EndIf
+	
+f.Intrinsic.Control.Catch
+	f.Intrinsic.UI.Msgbox(v.Ambient.ErrorDescription)
+	f.Intrinsic.Control.CallSub(frmShopKPIs_UnLoad)
+f.Intrinsic.Control.EndTry
+Program.Sub.TimeWriteOff.End
+
+Program.Sub.TotalHoursOnOrder.Start
+f.Intrinsic.Control.Try
+	V.Local.sSeriesBase.Declare
+	V.Local.sSeriesStacked.Declare
+	v.Local.sOutput.Declare
+	v.Local.bFileCheck.Declare
+	v.Local.sFileLocat.Declare
+	v.Local.sSql.Declare
+	v.Local.fRet.Declare
+	v.Local.fKPITarget.Declare
+	v.Local.sWC.Declare
+	v.Local.fResult.Declare
+	v.Local.dDate.Declare
+	v.Local.i.Declare
+	v.Local.iLen.Declare
+	
+	'Get KPI target from config
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",V.Caller.CompanyCode,"_GAB_5581_EST_HOURS_KPI.txt",v.Local.sFileLocat)
+	f.Intrinsic.File.Exists(v.Local.sFileLocat,v.Local.bFileCheck)
+	f.Intrinsic.Control.If(v.Local.bFileCheck)
+		f.Intrinsic.File.File2String(v.Local.sFileLocat,v.Local.fKPITarget)	
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Control.ExitSub
+	f.Intrinsic.Control.EndIf
+	f.Intrinsic.String.Replace(v.Global.sHTML,"%HOURSTARGET%",v.Local.fKPITarget,v.Global.sHTML)
+		
+	'Get estimated hours	
+	f.ODBC.Connection!con.executeandreturn("SELECT CONVERT(SUM(HOURSREM),SQL_NUMERIC) AS EST_HRS FROM APSV3_JBLINES WHERE SEQTYPE = '1'",v.Local.fRet)
+	f.Intrinsic.Math.Round(v.Local.fRet,0,v.Local.fRet)
+	f.Intrinsic.String.Replace(v.Global.sHTML,"%HOURSACTUAL%",v.Local.fRet,v.Global.sHTML)
+	
+	'Add row
+	'f.Data.DataTable.AddRow("dtKPI","DateRan",v.Ambient.Date,"KPIName","TotalHoursOnOrder","Actual",v.Local.fRet,"Target",v.Local.fKPITarget)
+	
+	'Calculate
+	f.Intrinsic.Control.If(v.Local.fKPITarget,<>,0)
+	f.Intrinsic.Control.AndIf(v.Local.fRet,<>,0)
+		f.Intrinsic.Math.Div(v.Local.fRet,v.Local.fKPITarget,v.Local.fResult)
+		F.Intrinsic.Control.If(v.Local.fresult,<=,1)
+			f.Intrinsic.Math.Mult(v.Local.fResult,100,v.Local.fResult)
+			f.Intrinsic.Math.Round(v.Local.fResult,0,v.Local.fResult)
+			f.Intrinsic.Math.Sub(100,v.Local.fResult,v.Local.fResult)
+		F.Intrinsic.Control.Else
+			'For colour purposes only.
+			V.Local.fResult.Set(1)
+		F.Intrinsic.Control.EndIf
+	f.Intrinsic.Control.EndIf
+	
+	
+	'Determine colour
+	f.Intrinsic.Control.If(v.Local.fResult,>=,-100,"AND",v.Local.fResult,<=,5.99)
+		f.Intrinsic.String.Replace(v.Global.sHTML,"%HOURSCOLOUR%","#00AF50",v.Global.sHTML)
+	f.Intrinsic.Control.ElseIf(v.Local.fResult,>=,6,"AND",v.Local.fResult,<=,9.99)
+		f.Intrinsic.String.Replace(v.Global.sHTML,"%HOURSCOLOUR%","#FF8000",v.Global.sHTML)
+	f.Intrinsic.Control.Else
+		f.Intrinsic.String.Replace(v.Global.sHTML,"%HOURSCOLOUR%","#FE0000",v.Global.sHTML)
+	f.Intrinsic.Control.EndIf
+	
+	F.Intrinsic.Control.If(V.Local.fRet,>,v.Local.fKPITarget)
+		f.Intrinsic.String.Replace(v.Global.sHTML,"%HOURSCOLOUR%","#00AF50",v.Global.sHTML)
+	F.Intrinsic.Control.EndIf
+	
+f.Intrinsic.Control.Catch
+	f.Intrinsic.UI.Msgbox(v.Ambient.ErrorDescription)
+	f.Intrinsic.Control.CallSub(frmShopKPIs_UnLoad)
+f.Intrinsic.Control.EndTry
+Program.Sub.TotalHoursOnOrder.End
+
+Program.Sub.Comments.Start
+${$5$}$2.0.0.0$}$2
+${$6$}$globalshop$}$20201221090859485$}$N6KCk/5vhz5oyVlDG2B4g8eDioysVRnIfCc0oO/RIbqeQrZAfWhrnLX55GPqpGyur1Rcb33Pzkc761GYPP8D2Q==
+Program.Sub.Comments.End
